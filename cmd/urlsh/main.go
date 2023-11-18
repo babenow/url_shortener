@@ -10,6 +10,7 @@ import (
 
 	"github.com/babenow/url_shortener/intrernal/config"
 	"github.com/babenow/url_shortener/intrernal/http-server/middleware/logger"
+	"github.com/babenow/url_shortener/intrernal/lib/logger/handlers/slogpretty"
 	"github.com/babenow/url_shortener/intrernal/lib/logger/sl"
 	"github.com/babenow/url_shortener/intrernal/storage/sqlite"
 	"github.com/go-chi/chi/v5"
@@ -22,7 +23,7 @@ func main() {
 
 	cfg := config.Instance()
 
-	log := setuplog(cfg.Env)
+	log := setupLogger(cfg.Env)
 	log.Info("starting application", slog.String("env", cfg.Env))
 	log.Debug("debug messages are enabled")
 
@@ -44,13 +45,11 @@ func main() {
 	// TODO: run server
 }
 
-func setuplog(env string) *slog.Logger {
+func setupLogger(env string) *slog.Logger {
 	var logger *slog.Logger
 	switch env {
 	case config.EnvLocal:
-		logger = slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{
-			Level: slog.LevelDebug,
-		}))
+		logger = setupPrettyLogger()
 	case config.EnvDev:
 		logger = slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{
 			Level: slog.LevelDebug,
@@ -63,4 +62,16 @@ func setuplog(env string) *slog.Logger {
 	}
 
 	return logger
+}
+
+func setupPrettyLogger() *slog.Logger {
+	opts := slogpretty.PrettyHandlerOptions{
+		SlogOpts: &slog.HandlerOptions{
+			Level: slog.LevelDebug,
+		},
+	}
+
+	handler := opts.NewPrettyHandler(os.Stdout)
+
+	return slog.New(handler)
 }

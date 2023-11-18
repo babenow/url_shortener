@@ -1,5 +1,9 @@
 PROJECT_DIR = $(shell pwd)
 PROJECT_BIN = $(PROJECT_DIR)/bin
+CONFIG_PATH = $(PROJECT_DIR)/config/local.yaml
+PATH := $(PROJECT_BIN):$(PATH)
+PATH := $(CONFIG_PATH):$(PATH)
+
 BINARY = urlsh
 GOLANGCI_LINT_VERSION = v1.55.0
 
@@ -11,7 +15,7 @@ endif
 
 $(shell [ -f $(PROJECT_BIN) ] || mkdir -p $(PROJECT_BIN))
 
-PATH := $(PROJECT_BIN):$(PATH)
+
 
 .PHONY:build
 build:lint
@@ -19,7 +23,7 @@ build:lint
 
 .PHONY:run
 run:build
-	$(BINARY)
+	CONFIG_PATH=$(CONFIG_PATH) $(BINARY)
 
 
 .PHONY:test

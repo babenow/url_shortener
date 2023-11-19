@@ -27,10 +27,9 @@ type HTTPServer struct {
 }
 
 type Config struct {
-	Env            string     `yaml:"env" env:"ENV" env-default:"local" env-required:"true"`
-	StoragePath    string     `yaml:"storage_path" env:"STORAGE_PATH" env-required:"true"`
-	MigrationsPath string     `yaml:"migrations_path" env:"MIGRATIONS_PATH" env-required:"true"`
-	HttpServer     HTTPServer `yaml:"http_server"`
+	Env         string     `yaml:"env" env:"ENV" env-default:"local" env-required:"true"`
+	StoragePath string     `yaml:"storage_path" env:"STORAGE_PATH" env-required:"true"`
+	HttpServer  HTTPServer `yaml:"http_server"`
 }
 
 func mustLoad() {

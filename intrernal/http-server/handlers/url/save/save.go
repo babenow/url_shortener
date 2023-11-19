@@ -2,13 +2,13 @@ package save
 
 import (
 	"context"
-	"fmt"
 	"log/slog"
-	"math/rand"
 	"net/http"
 
+	"github.com/babenow/url_shortener/intrernal/config"
 	resp "github.com/babenow/url_shortener/intrernal/lib/api/response"
 	"github.com/babenow/url_shortener/intrernal/lib/logger/sl"
+	"github.com/babenow/url_shortener/intrernal/lib/random"
 	"github.com/babenow/url_shortener/intrernal/model"
 	"github.com/go-chi/chi/v5/middleware"
 	"github.com/go-chi/render"
@@ -18,6 +18,7 @@ const pkg = "handlers.url.save."
 
 type URLSaver interface {
 	Save(context.Context, model.Url) (int64, error)
+	GetURLByAlias(ctx context.Context, alias string) (*model.Url, error)
 }
 
 type Request struct {
@@ -47,11 +48,11 @@ func New(log *slog.Logger, saver URLSaver) http.HandlerFunc {
 			return
 		}
 		if req.Alias == "" {
-			req.Alias = fmt.Sprint(rand.Int63n(999999)) // FIXME: генерация ссылки
+			req.Alias = generateAlias(r.Context(), log, saver)
 		}
 		m := model.Url{Alias: req.Alias, URL: req.URL}
 
-		_, err := saver.Save(r.Context(), m)
+		id, err := saver.Save(r.Context(), m)
 		if err != nil {
 			log.Error("failed to save url", sl.Err(err))
 
@@ -59,6 +60,19 @@ func New(log *slog.Logger, saver URLSaver) http.HandlerFunc {
 			return
 		}
 
-		render.JSON(w, r, resp.OK())
+		log.Info("url added", slog.Int64("id", id))
+
+		render.JSON(w, r, Response{
+			Response: *resp.OK(),
+			Alias:    m.Alias,
+		})
 	}
+}
+
+func generateAlias(ctx context.Context, log *slog.Logger, saver URLSaver) string {
+	a := random.NewRandomString(config.Instance().AliasLength)
+	if _, err := saver.GetURLByAlias(ctx, a); err != nil {
+		return a
+	}
+	return generateAlias(ctx, log, saver)
 }

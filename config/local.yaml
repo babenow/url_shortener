@@ -1,5 +1,6 @@
 env: "local" # local, dev, prod
 storage_path: "./storage.db"
+alias_length: 6
 goose:
   print_status: false
 http_server:

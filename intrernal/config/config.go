@@ -33,6 +33,7 @@ type Goose struct {
 type Config struct {
 	Env         string     `yaml:"env" env:"ENV" env-default:"local" env-required:"true"`
 	StoragePath string     `yaml:"storage_path" env:"STORAGE_PATH" env-required:"true"`
+	AliasLength int        `yaml:"alias_length" env:"ALIAS_LENGTH" env-default:"6"`
 	Goose       Goose      `yaml:"goose"`
 	HttpServer  HTTPServer `yaml:"http_server"`
 }

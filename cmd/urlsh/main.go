@@ -4,11 +4,14 @@ import (
 	"context"
 	"log"
 	"log/slog"
+	"net/http"
 	"os"
 	"os/signal"
 	"syscall"
 
 	"github.com/babenow/url_shortener/intrernal/config"
+	"github.com/babenow/url_shortener/intrernal/http-server/handlers/redirect"
+	"github.com/babenow/url_shortener/intrernal/http-server/handlers/url/save"
 	"github.com/babenow/url_shortener/intrernal/http-server/middleware/logger"
 	"github.com/babenow/url_shortener/intrernal/lib/logger/handlers/slogpretty"
 	"github.com/babenow/url_shortener/intrernal/lib/logger/sl"
@@ -27,12 +30,11 @@ func main() {
 	log.Info("starting application", slog.String("env", cfg.Env))
 	log.Debug("debug messages are enabled")
 
-	storage, err := sqlite.New(ctx)
+	storage, err := sqlite.New(ctx, log)
 	if err != nil {
 		log.Error("can not initialize storage", sl.Err(err))
 		os.Exit(1)
 	}
-	_ = storage
 
 	router := chi.NewRouter()
 
@@ -42,7 +44,25 @@ func main() {
 	router.Use(middleware.Recoverer)
 	router.Use(middleware.URLFormat) // TODO: привязка к роутеру chi
 
-	// TODO: run server
+	router.Post("/url", save.New(log, storage.UrlStorage()))
+	router.Get("/{alias}", redirect.New(ctx, log, storage.UrlStorage()))
+
+	// starting server
+	log.Info("Starting server", slog.String("address", cfg.HttpServer.Address))
+
+	srv := &http.Server{
+		Addr:         cfg.HttpServer.Address,
+		Handler:      router,
+		ReadTimeout:  cfg.HttpServer.Timeout,
+		WriteTimeout: cfg.HttpServer.Timeout,
+		IdleTimeout:  cfg.HttpServer.IdleTimeout,
+	}
+
+	if err := srv.ListenAndServe(); err != nil {
+		log.ErrorContext(ctx, "failed to start sertver", sl.Err(err))
+	}
+
+	log.Error("server stopped")
 }
 
 func setupLogger(env string) *slog.Logger {

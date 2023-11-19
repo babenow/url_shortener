@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"log/slog"
 
 	"github.com/babenow/url_shortener/intrernal/lib/helper/format"
 	"github.com/babenow/url_shortener/intrernal/model"
@@ -27,11 +28,12 @@ type dbUrl struct {
 }
 
 type SqliteURLStorage struct {
-	db *sqlx.DB
+	db  *sqlx.DB
+	log *slog.Logger
 }
 
-func newSqliteURLStorage(db *sqlx.DB) *SqliteURLStorage {
-	return &SqliteURLStorage{db}
+func newSqliteURLStorage(db *sqlx.DB, log *slog.Logger) *SqliteURLStorage {
+	return &SqliteURLStorage{db, log}
 }
 
 func (s *SqliteURLStorage) Save(ctx context.Context, model model.Url) (int64, error) {
@@ -40,7 +42,7 @@ func (s *SqliteURLStorage) Save(ctx context.Context, model model.Url) (int64, er
 	if err != nil {
 		return 0, format.Err(op, err)
 	}
-	defer conn.Close()
+	defer format.CheckErr(op, s.log, conn.Close)
 
 	// TODO: Возможность обновлять URL в случае, если что-то изменилось
 
@@ -57,7 +59,7 @@ func (s *SqliteURLStorage) Save(ctx context.Context, model model.Url) (int64, er
 
 	if err := row.Scan(&id); err != nil {
 		if sqliteErr, ok := err.(sqlite3.Error); ok && sqliteErr.ExtendedCode == sqlite3.ErrConstraintUnique {
-			return 0, format.Err(op, storage.ErrURLExists)
+			return 0, storage.ErrURLExists
 		}
 		return 0, format.Err(op, err)
 	}
@@ -73,12 +75,13 @@ func (s *SqliteURLStorage) GetURLByAlias(ctx context.Context, alias string) (*mo
 	if err != nil {
 		return nil, format.Err(op, err)
 	}
-	defer conn.Close()
+	defer format.CheckErr(op, s.log, conn.Close)
+	//
 	var url dbUrl
 
 	if err := s.db.GetContext(ctx, &url, fmt.Sprintf(`SELECT * FROM %s WHERE alias=$1`, tableName), alias); err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
-			return nil, format.Err(op, storage.ErrURLNotFound)
+			return nil, storage.ErrURLNotFound
 		}
 		return nil, format.Err(op, err)
 	}
@@ -92,7 +95,7 @@ func (s *SqliteURLStorage) DeleteURLByID(ctx context.Context, id int64) error {
 	if err != nil {
 		return format.Err(op, err)
 	}
-	defer conn.Close()
+	defer format.CheckErr(op, s.log, conn.Close)
 
 	if _, err := s.db.ExecContext(ctx, fmt.Sprintf(`DELETE FROM %s WHERE id=$1`, tableName), id); err != nil {
 		return format.Err(op, err)
@@ -107,7 +110,7 @@ func (s *SqliteURLStorage) DeleteURLByAlias(ctx context.Context, alias string) e
 	if err != nil {
 		return format.Err(op, err)
 	}
-	defer conn.Close()
+	defer format.CheckErr(op, s.log, conn.Close)
 
 	if _, err := s.db.ExecContext(ctx, fmt.Sprintf(`DELETE FROM %s WHERE alias=$1`, tableName), alias); err != nil {
 		return format.Err(op, err)

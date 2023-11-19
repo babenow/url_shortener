@@ -27,7 +27,7 @@ func main() {
 	log.Info("starting application", slog.String("env", cfg.Env))
 	log.Debug("debug messages are enabled")
 
-	storage, err := sqlite.New(ctx)
+	storage, err := sqlite.New(ctx, log)
 	if err != nil {
 		log.Error("can not initialize storage", sl.Err(err))
 		os.Exit(1)

@@ -24,6 +24,8 @@ type HTTPServer struct {
 	Address     string        `yaml:"address" env:"HTTP_SERVER_ADDRESS" env-default:"localhost:8082"`
 	Timeout     time.Duration `yaml:"timeout" env:"HTTP_SERVER_TIMEOUT" env-default:"4s"`
 	IdleTimeout time.Duration `yaml:"idle_timeout" env:"HTTP_SERVER_IDLE_TIMEOUT" env-default:"60s"`
+	User        string        `yaml:"user" env-required:"true"`
+	Password    string        `yaml:"password" env-required:"true" env:"HTTP_SERVER_PASSWORD"`
 }
 
 type Goose struct {

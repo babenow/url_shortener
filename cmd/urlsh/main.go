@@ -21,7 +21,8 @@ import (
 )
 
 func main() {
-	ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
+	// TODO: move timeout to config
+	ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGINT, syscall.SIGTERM)
 	defer cancel()
 
 	cfg := config.Instance()
@@ -44,11 +45,21 @@ func main() {
 	router.Use(middleware.Recoverer)
 	router.Use(middleware.URLFormat) // TODO: привязка к роутеру chi
 
-	router.Post("/url", save.New(log, storage.UrlStorage()))
+	router.Route("/url", func(r chi.Router) {
+		r.Use(middleware.BasicAuth("url-shortener", map[string]string{
+			cfg.HttpServer.User: cfg.HttpServer.Password,
+		}))
+		r.Post("/", save.New(log, storage.UrlStorage()))
+		// TODO: delete url
+	})
+
 	router.Get("/{alias}", redirect.New(ctx, log, storage.UrlStorage()))
 
 	// starting server
 	log.Info("Starting server", slog.String("address", cfg.HttpServer.Address))
+
+	done := make(chan os.Signal, 1)
+	signal.Notify(done, os.Interrupt, syscall.SIGINT, syscall.SIGTERM)
 
 	srv := &http.Server{
 		Addr:         cfg.HttpServer.Address,
@@ -57,12 +68,24 @@ func main() {
 		WriteTimeout: cfg.HttpServer.Timeout,
 		IdleTimeout:  cfg.HttpServer.IdleTimeout,
 	}
+	go func() {
+		if err := srv.ListenAndServe(); err != nil {
+			log.ErrorContext(ctx, "failed to start sertver", sl.Err(err))
+		}
+	}()
 
-	if err := srv.ListenAndServe(); err != nil {
-		log.ErrorContext(ctx, "failed to start sertver", sl.Err(err))
+	log.Info("server started")
+
+	<-done
+	log.Error("stopping server")
+
+	if err := srv.Shutdown(ctx); err != nil {
+		log.Error("failed to stop server", sl.Err(err))
+
+		return
 	}
 
-	log.Error("server stopped")
+	log.Info("server stopped")
 }
 
 func setupLogger(env string) *slog.Logger {

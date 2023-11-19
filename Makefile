@@ -28,7 +28,7 @@ run:build
 
 .PHONY:test
 test:
-	go test -v -race --timeout 30s ./...
+	CONFIG_PATH=$(CONFIG_PATH) go test -v --timeout 30s ./...
 
 .PHONY:.install-linter
 .install-linter:

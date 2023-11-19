@@ -59,7 +59,7 @@ func (s *SqliteURLStorage) Save(ctx context.Context, model model.Url) (int64, er
 
 	if err := row.Scan(&id); err != nil {
 		if sqliteErr, ok := err.(sqlite3.Error); ok && sqliteErr.ExtendedCode == sqlite3.ErrConstraintUnique {
-			return 0, format.Err(op, storage.ErrURLExists)
+			return 0, storage.ErrURLExists
 		}
 		return 0, format.Err(op, err)
 	}
@@ -81,7 +81,7 @@ func (s *SqliteURLStorage) GetURLByAlias(ctx context.Context, alias string) (*mo
 
 	if err := s.db.GetContext(ctx, &url, fmt.Sprintf(`SELECT * FROM %s WHERE alias=$1`, tableName), alias); err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
-			return nil, format.Err(op, storage.ErrURLNotFound)
+			return nil, storage.ErrURLNotFound
 		}
 		return nil, format.Err(op, err)
 	}

@@ -14,6 +14,20 @@ type URLGetter struct {
 	mock.Mock
 }
 
+// AddRedirect provides a mock function with given fields: ctx, alias
+func (_m *URLGetter) AddRedirect(ctx context.Context, alias string) error {
+	ret := _m.Called(ctx, alias)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, string) error); ok {
+		r0 = rf(ctx, alias)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
 // GetURLByAlias provides a mock function with given fields: ctx, alias
 func (_m *URLGetter) GetURLByAlias(ctx context.Context, alias string) (*model.Url, error) {
 	ret := _m.Called(ctx, alias)

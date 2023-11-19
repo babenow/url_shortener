@@ -20,6 +20,7 @@ const pkg = "http_server.handlers.redirect."
 //go:generate go run github.com/vektra/mockery/v2@v2.37.1 --name=URLGetter
 type URLGetter interface {
 	GetURLByAlias(ctx context.Context, alias string) (*model.Url, error)
+	AddRedirect(ctx context.Context, alias string) error
 }
 
 func New(ctx context.Context, log *slog.Logger, finder URLGetter) http.HandlerFunc {
@@ -52,6 +53,12 @@ func New(ctx context.Context, log *slog.Logger, finder URLGetter) http.HandlerFu
 		}
 
 		log.Info("got url", slog.String("url", m.URL))
+		if err := finder.AddRedirect(ctx, alias); err != nil {
+			log.Error("can not add redirect", sl.Err(err))
+
+			render.JSON(w, r, resp.Error("internal error"))
+			return
+		}
 
 		http.Redirect(w, r, m.URL, http.StatusFound)
 	}

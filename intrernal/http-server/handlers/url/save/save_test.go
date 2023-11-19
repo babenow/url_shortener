@@ -19,7 +19,10 @@ import (
 )
 
 func TestMain(m *testing.M) {
-	save.ConfigureConfigPath()
+	if err := save.ConfigureConfigPath(); err != nil {
+		fmt.Println("can not configure config path: %w", err)
+		os.Exit(1)
+	}
 
 	os.Exit(m.Run())
 }

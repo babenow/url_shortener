@@ -22,9 +22,10 @@ const (
 
 // dbUrl структура прослойки
 type dbUrl struct {
-	ID    int64  `db:"id"`
-	Alias string `db:"alias"`
-	URL   string `db:"url"`
+	ID            int64         `db:"id"`
+	Alias         string        `db:"alias"`
+	URL           string        `db:"url"`
+	RedirectCount sql.NullInt64 `db:"redirect_count"`
 }
 
 type SqliteURLStorage struct {
@@ -85,7 +86,7 @@ func (s *SqliteURLStorage) GetURLByAlias(ctx context.Context, alias string) (*mo
 		}
 		return nil, format.Err(op, err)
 	}
-
+	
 	return (*model.Url)(&url), nil
 }
 
@@ -113,6 +114,21 @@ func (s *SqliteURLStorage) DeleteURLByAlias(ctx context.Context, alias string) e
 	defer format.CheckErr(op, s.log, conn.Close)
 
 	if _, err := s.db.ExecContext(ctx, fmt.Sprintf(`DELETE FROM %s WHERE alias=$1`, tableName), alias); err != nil {
+		return format.Err(op, err)
+	}
+
+	return nil
+}
+
+func (s *SqliteURLStorage) AddRedirect(ctx context.Context, alias string) error {
+	op := pkg + "AddRedirect"
+	conn, err := s.db.Connx(ctx)
+	if err != nil {
+		return format.Err(op, err)
+	}
+	defer format.CheckErr(op, s.log, conn.Close)
+
+	if _, err := s.db.ExecContext(ctx, `UPDATE url SET redirect_count = redirect_count + 1 WHERE alias = $1`, alias); err != nil {
 		return format.Err(op, err)
 	}
 

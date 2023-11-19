@@ -41,6 +41,10 @@ func TestRedirect(t *testing.T) {
 			defer ts.Close()
 
 			if tc.respError == "" || tc.mockError != nil {
+				urlGetter.On("AddRedirect", context.Background(), tc.alias).
+					Return(nil).
+					Once()
+
 				urlGetter.On("GetURLByAlias", context.Background(), tc.alias).
 					Return(&model.Url{ID: int64(1), Alias: tc.alias, URL: tc.url}, nil).
 					Once()

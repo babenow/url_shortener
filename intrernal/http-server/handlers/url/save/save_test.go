@@ -70,11 +70,11 @@ func TestSaveHandler(t *testing.T) {
 
 			urlSaverMock := mocks.NewURLSaver(t)
 
-			// if tc.alias == "" {
-			// 	urlSaverMock.On("GetURLByAlias", context.Background(), mock.AnythingOfType("string")).
-			// 		Return(nil, errors.New("unexpected error")).
-			// 		Once()
-			// }
+			if tc.alias == "" {
+				urlSaverMock.On("GetURLByAlias", context.Background(), mock.AnythingOfType("string")).
+					Return(nil, errors.New("unexpected error")).
+					Once()
+			}
 
 			if tc.respError == "" || tc.mockError != nil {
 				urlSaverMock.On("Save", context.Background(), mock.AnythingOfType("model.Url")).

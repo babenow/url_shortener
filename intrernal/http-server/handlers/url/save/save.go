@@ -63,7 +63,7 @@ func New(log *slog.Logger, saver URLSaver) http.HandlerFunc {
 		}
 		alias := req.Alias
 		if alias == "" {
-			alias = random.NewRandomString(config.Instance().AliasLength)
+			alias = generateAlias(r.Context(), saver)
 		}
 		m := model.Url{Alias: alias, URL: req.URL}
 
@@ -91,10 +91,10 @@ func New(log *slog.Logger, saver URLSaver) http.HandlerFunc {
 	}
 }
 
-// func generateAlias(ctx context.Context, saver URLSaver) string {
-// 	a := random.NewRandomString(config.Instance().AliasLength)
-// 	if _, err := saver.GetURLByAlias(ctx, a); err != nil {
-// 		return a
-// 	}
-// 	return generateAlias(ctx, saver)
-// }
+func generateAlias(ctx context.Context, saver URLSaver) string {
+	a := random.NewRandomString(config.Instance().AliasLength)
+	if _, err := saver.GetURLByAlias(ctx, a); err != nil {
+		return a
+	}
+	return generateAlias(ctx, saver)
+}

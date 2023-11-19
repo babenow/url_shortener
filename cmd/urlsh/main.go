@@ -10,6 +10,7 @@ import (
 	"syscall"
 
 	"github.com/babenow/url_shortener/intrernal/config"
+	"github.com/babenow/url_shortener/intrernal/http-server/handlers/redirect"
 	"github.com/babenow/url_shortener/intrernal/http-server/handlers/url/save"
 	"github.com/babenow/url_shortener/intrernal/http-server/middleware/logger"
 	"github.com/babenow/url_shortener/intrernal/lib/logger/handlers/slogpretty"
@@ -44,6 +45,7 @@ func main() {
 	router.Use(middleware.URLFormat) // TODO: привязка к роутеру chi
 
 	router.Post("/url", save.New(log, storage.UrlStorage()))
+	router.Get("/{alias}", redirect.New(ctx, log, storage.UrlStorage()))
 
 	// starting server
 	log.Info("Starting server", slog.String("address", cfg.HttpServer.Address))

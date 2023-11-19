@@ -1,7 +1,7 @@
 -- +goose Up
 -- +goose StatementBegin
 ALTER TABLE url
-ADD COLUMN redirect_count INTEGER DEFAULT 0;
+ADD COLUMN redirect_count INTEGER NOT NULL DEFAULT 0;
 -- +goose StatementEnd
 -- +goose Down
 -- +goose StatementBegin
